@@ -10,7 +10,7 @@ import { OrdersModal } from './components/OrdersModal';
 import { ProductDetailsModal } from './components/ProductDetailsModal';
 import { supabase } from './lib/supabase';
 import { Product, Category, CartItem, Order, Wishlist } from './types/database';
-import { Search, Filter } from 'lucide-react';
+import { Search, ListFilter as Filter } from 'lucide-react';
 
 function AppContent() {
   const { user, customer, loading } = useAuth();
