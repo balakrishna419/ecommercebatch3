@@ -7,8 +7,9 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { ProductCard } from './components/ProductCard';
 import { CartModal } from './components/CartModal';
 import { OrdersModal } from './components/OrdersModal';
+import { ProductDetailsModal } from './components/ProductDetailsModal';
 import { supabase } from './lib/supabase';
-import { Product, Category, CartItem, Order } from './types/database';
+import { Product, Category, CartItem, Order, Wishlist } from './types/database';
 import { Search, Filter } from 'lucide-react';
 
 function AppContent() {
@@ -28,6 +29,9 @@ function AppContent() {
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [productRatings, setProductRatings] = useState<Record<string, number>>({});
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isProductDetailsOpen, setIsProductDetailsOpen] = useState(false);
+  const [wishlist, setWishlist] = useState<Wishlist[]>([]);
 
   useEffect(() => {
     loadProducts();
@@ -43,9 +47,11 @@ function AppContent() {
     if (user && customer) {
       loadCartItems();
       loadOrders();
+      loadWishlist();
     } else {
       setCartItems([]);
       setOrders([]);
+      setWishlist([]);
     }
   }, [user, customer]);
 
@@ -138,6 +144,17 @@ function AppContent() {
       .order('order_date', { ascending: false });
 
     if (data) setOrders(data);
+  }
+
+  async function loadWishlist() {
+    if (!customer) return;
+
+    const { data } = await supabase
+      .from('wishlist')
+      .select('*')
+      .eq('customer_id', customer.customer_id);
+
+    if (data) setWishlist(data);
   }
 
   async function handleAddToCart(product: Product) {
@@ -252,9 +269,11 @@ function AppContent() {
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
-    const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.brand?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRepair = !showRepairOnly || product.is_repair_service;
+    const matchesSearch = searchQuery === '' ||
+                         product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                         (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesRepair = !showRepairOnly || (product.is_repair_service === true);
     return matchesCategory && matchesSearch && matchesRepair;
   });
 
@@ -360,6 +379,10 @@ function AppContent() {
                 key={product.product_id}
                 product={product}
                 onAddToCart={handleAddToCart}
+                onViewDetails={(p) => {
+                  setSelectedProduct(p);
+                  setIsProductDetailsOpen(true);
+                }}
                 averageRating={productRatings[product.product_id]}
               />
             ))}
@@ -410,6 +433,19 @@ function AppContent() {
             if (data) setOrders(data);
           }
         }}
+      />
+
+      <ProductDetailsModal
+        isOpen={isProductDetailsOpen}
+        onClose={() => {
+          setIsProductDetailsOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        onAddToCart={handleAddToCart}
+        averageRating={selectedProduct ? productRatings[selectedProduct.product_id] : undefined}
+        customerWishlist={wishlist}
+        onWishlistUpdated={loadWishlist}
       />
     </div>
   );

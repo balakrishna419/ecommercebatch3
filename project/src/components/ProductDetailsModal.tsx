@@ -11,6 +11,7 @@ interface ProductDetailsModalProps {
   onAddToCart: (product: Product) => void;
   averageRating?: number;
   customerWishlist?: Wishlist[];
+  onWishlistUpdated?: () => void;
 }
 
 export function ProductDetailsModal({
@@ -20,6 +21,7 @@ export function ProductDetailsModal({
   onAddToCart,
   averageRating,
   customerWishlist = [],
+  onWishlistUpdated,
 }: ProductDetailsModalProps) {
   const { customer } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -70,6 +72,9 @@ export function ProductDetailsModal({
       });
     }
     setIsWishlisted(!isWishlisted);
+    if (onWishlistUpdated) {
+      onWishlistUpdated();
+    }
     setLoading(false);
   }
 

@@ -1,13 +1,14 @@
-import { ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart, Star, Eye } from 'lucide-react';
 import { Product } from '../types/database';
 
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product) => void;
+  onViewDetails: (product: Product) => void;
   averageRating?: number;
 }
 
-export function ProductCard({ product, onAddToCart, averageRating }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, onViewDetails, averageRating }: ProductCardProps) {
   const stars = Math.round(averageRating || 0);
 
   return (
@@ -67,24 +68,35 @@ export function ProductCard({ product, onAddToCart, averageRating }: ProductCard
           </p>
         )}
 
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-2xl font-bold text-orange-600">
-              ₹{product.mrp.toFixed(2)}
-            </span>
-            <p className="text-xs text-gray-500 mt-1">
-              {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-            </p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-2xl font-bold text-orange-600">
+                ₹{product.mrp.toFixed(2)}
+              </span>
+              <p className="text-xs text-gray-500 mt-1">
+                {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+              </p>
+            </div>
           </div>
 
-          <button
-            onClick={() => onAddToCart(product)}
-            disabled={product.stock === 0}
-            className="flex items-center space-x-1 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>Add</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onViewDetails(product)}
+              className="flex-1 flex items-center justify-center space-x-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Details</span>
+            </button>
+            <button
+              onClick={() => onAddToCart(product)}
+              disabled={product.stock === 0}
+              className="flex-1 flex items-center justify-center space-x-1 bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>Add</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

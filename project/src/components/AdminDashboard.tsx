@@ -1,14 +1,19 @@
-import { X, CreditCard as Edit2, Trash2, Plus } from 'lucide-react';
+import { X, CreditCard as Edit2, Trash2, Plus, Package, Users, BarChart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Product, Category } from '../types/database';
+import { UserManagement } from './UserManagement';
+import { InventoryManagement } from './InventoryManagement';
 
 interface AdminDashboardProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type TabType = 'products' | 'users' | 'inventory';
+
 export function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
+  const [activeTab, setActiveTab] = useState<TabType>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -137,7 +142,7 @@ export function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
           <button
@@ -148,8 +153,59 @@ export function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
           </button>
         </div>
 
+        <div className="border-b">
+          <div className="flex space-x-1 p-2">
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                setShowForm(false);
+              }}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'products'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span>Products</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('users');
+                setShowForm(false);
+              }}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'users'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Users</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('inventory');
+                setShowForm(false);
+              }}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'inventory'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart className="w-4 h-4" />
+              <span>Inventory</span>
+            </button>
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto p-6">
-          {showForm ? (
+          {activeTab === 'users' ? (
+            <UserManagement />
+          ) : activeTab === 'inventory' ? (
+            <InventoryManagement />
+          ) : showForm ? (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 {selectedProduct ? 'Edit Product' : 'Add New Product'}

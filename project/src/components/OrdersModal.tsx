@@ -1,6 +1,8 @@
-import { X, Package, Trash2 } from 'lucide-react';
-import { Order } from '../types/database';
+import { X, Package, Trash2, CreditCard } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Order, Payment } from '../types/database';
 import { supabase } from '../lib/supabase';
+import { PaymentModal } from './PaymentModal';
 
 interface OrdersModalProps {
   isOpen: boolean;
@@ -10,6 +12,32 @@ interface OrdersModalProps {
 }
 
 export function OrdersModal({ isOpen, onClose, orders, onOrderDeleted }: OrdersModalProps) {
+  const [payments, setPayments] = useState<Record<string, Payment>>({});
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && orders.length > 0) {
+      loadPayments();
+    }
+  }, [isOpen, orders]);
+
+  async function loadPayments() {
+    const orderIds = orders.map(o => o.order_id);
+    const { data } = await supabase
+      .from('payments')
+      .select('*')
+      .in('order_id', orderIds);
+
+    if (data) {
+      const paymentsMap = data.reduce((acc, payment) => {
+        acc[payment.order_id] = payment;
+        return acc;
+      }, {} as Record<string, Payment>);
+      setPayments(paymentsMap);
+    }
+  }
+
   if (!isOpen) return null;
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -103,7 +131,7 @@ export function OrdersModal({ isOpen, onClose, orders, onOrderDeleted }: OrdersM
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-2xl font-bold text-orange-600">
                         ₹{order.order_amount.toFixed(2)}
                       </p>
@@ -112,18 +140,49 @@ export function OrdersModal({ isOpen, onClose, orders, onOrderDeleted }: OrdersM
                           {order.shipping_address}
                         </p>
                       )}
+                      {payments[order.order_id] && (
+                        <div className="mt-2 flex items-center space-x-2">
+                          <CreditCard className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-600">
+                            {payments[order.order_id].payment_mode.replace('_', ' ').toUpperCase()}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            payments[order.order_id].status === 'completed'
+                              ? 'bg-green-100 text-green-700'
+                              : payments[order.order_id].status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {payments[order.order_id].status.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    {order.shipping_date && (
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">Expected Delivery</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {new Date(order.shipping_date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-end space-y-2">
+                      {order.shipping_date && (
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Expected Delivery</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {new Date(order.shipping_date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                      )}
+                      {!payments[order.order_id] && (
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setIsPaymentModalOpen(true);
+                          }}
+                          className="flex items-center space-x-1 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                          <span>Pay Now</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -131,6 +190,22 @@ export function OrdersModal({ isOpen, onClose, orders, onOrderDeleted }: OrdersM
           )}
         </div>
       </div>
+
+      {selectedOrder && (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => {
+            setIsPaymentModalOpen(false);
+            setSelectedOrder(null);
+          }}
+          orderId={selectedOrder.order_id}
+          amount={selectedOrder.order_amount}
+          onPaymentSuccess={() => {
+            loadPayments();
+            setSelectedOrder(null);
+          }}
+        />
+      )}
     </div>
   );
 }
