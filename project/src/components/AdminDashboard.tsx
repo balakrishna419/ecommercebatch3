@@ -1,4 +1,4 @@
-import { X, CreditCard as Edit2, Trash2, Plus, Package, Users, BarChart3 as BarChart } from 'lucide-react';
+import { X, CreditCard as Edit2, Trash2, Plus, Package, Users, ChartBar as BarChart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Product, Category } from '../types/database';
